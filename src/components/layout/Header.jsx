@@ -14,7 +14,7 @@ const Header = () => {
 
   return (
     <header className="bg-gray-800 text-white p-4 flex justify-between items-center shadow-md border-b border-gray-700" >
-      <div className="text-xl font-bold">导师推荐系统</div>
+      <div className="text-xl font-bold">基于学生评价的导师智能推荐系统</div>
       
       {isAuthenticated && (
         <div className="flex items-center space-x-4">

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getRecommendations } from '../../api/getcommendApi'; 
+// 🔴 新增：导入路由跳转 Hook（基于 React Router v6）
+import { useNavigate } from 'react-router-dom';
 
 const RecommendationForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -10,6 +12,13 @@ const RecommendationForm = ({ onSubmit }) => {
   const [universities, setUniversities] = useState([]); // 学校选项：[{id, name}, ...]
   const [departments, setDepartments] = useState([]);   // 学院选项：[{id, name}, ...]
   const [isLoading, setIsLoading] = useState(false);
+  // 🔴 初始化路由跳转实例
+  const navigate = useNavigate();
+
+  // 🔴 新增：点击「我要评价」跳转到评论页面（需在路由配置中定义 /rate 路径）
+  const handleRateClick = () => {
+    navigate('/user/submit-review');
+  };
 
   // 🔴 第一步：加载学校列表（从 public 目录的 JSON 文件读取）
   useEffect(() => {
@@ -18,13 +27,13 @@ const RecommendationForm = ({ onSubmit }) => {
         // 读取 public 下的 JSON 文件（React 中根路径即为 public）
         const response = await fetch('/supported_universities.json');
         const data = await response.json();
-        
+
         // 构造学校选项：[ {id: 'qb', name: '全部'}, {id: '上海交通大学', name: '上海交通大学'}, ... ]
         const universityOptions = [
           { id: 'qb', name: '全部' }, // “全部”学校的 ID 约定为 "qb"
-          ...Object.keys(data).map(uniName => ({ 
-            id: uniName, 
-            name: uniName 
+          ...Object.keys(data).map(uniName => ({
+            id: uniName,
+            name: uniName
           }))
         ];
         setUniversities(universityOptions);
@@ -55,9 +64,9 @@ const RecommendationForm = ({ onSubmit }) => {
             const targetDepts = data[formData.university] || []; // 如 data["上海交通大学"]
             deptOptions = [
               { id: 'qb', name: '全部' }, // “全部”学院的 ID 约定为 "qb"
-              ...targetDepts.map(deptName => ({ 
-                id: deptName, 
-                name: deptName 
+              ...targetDepts.map(deptName => ({
+                id: deptName,
+                name: deptName
               }))
             ];
           }
@@ -99,15 +108,15 @@ const RecommendationForm = ({ onSubmit }) => {
     try {
       setIsLoading(true);
       // 处理学校参数：“全部”或具体学校名称
-      const selectedUniversity = formData.university === 'qb' 
-        ? '全部' 
+      const selectedUniversity = formData.university === 'qb'
+        ? '全部'
         : universities.find(u => u.id === formData.university)?.name || formData.university;
-      
+
       // 处理学院参数：“全部”或具体学院名称
-      const selectedDepartment = formData.department === 'qb' 
-        ? '全部' 
+      const selectedDepartment = formData.department === 'qb'
+        ? '全部'
         : departments.find(d => d.id === formData.department)?.name || formData.department;
-      
+
       // 调用 API 传递参数
       const recommendations = await getRecommendations({
         query: formData.query,
@@ -137,8 +146,8 @@ const RecommendationForm = ({ onSubmit }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 需求输入框 */}
         <div>
-          <label 
-            htmlFor="query" 
+          <label
+            htmlFor="query"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
             描述导师需求
@@ -149,8 +158,8 @@ const RecommendationForm = ({ onSubmit }) => {
             value={formData.query}
             onChange={handleInputChange}
             placeholder="例如：研究人工智能的年轻导师，有海外经历"
-            className="w-full min-h-[120px] px-4 py-3 border border-blue-200 rounded-md shadow-sm 
-              focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm 
+            className="w-full min-h-[120px] px-4 py-3 border border-blue-200 rounded-md shadow-sm
+              focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm
               bg-white/90 resize-none"
             disabled={isLoading}
           />
@@ -160,8 +169,8 @@ const RecommendationForm = ({ onSubmit }) => {
         <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
           {/* 学校选择器 */}
           <div className="w-full sm:w-1/2">
-            <label 
-              htmlFor="university" 
+            <label
+              htmlFor="university"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
               选择目标学校
@@ -171,8 +180,8 @@ const RecommendationForm = ({ onSubmit }) => {
               name="university"
               value={formData.university}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-blue-200 rounded-md shadow-sm 
-                focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm 
+              className="w-full px-3 py-2 border border-blue-200 rounded-md shadow-sm
+                focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm
                 bg-white/90"
               disabled={isLoading || universities.length === 0}
             >
@@ -187,8 +196,8 @@ const RecommendationForm = ({ onSubmit }) => {
 
           {/* 学院选择器 */}
           <div className="w-full sm:w-1/2">
-            <label 
-              htmlFor="department" 
+            <label
+              htmlFor="department"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
               选择目标学院
@@ -198,8 +207,8 @@ const RecommendationForm = ({ onSubmit }) => {
               name="department"
               value={formData.department}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-blue-200 rounded-md shadow-sm 
-                focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm 
+              className="w-full px-3 py-2 border border-blue-200 rounded-md shadow-sm
+                focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm
                 bg-white/90"
               disabled={isLoading || !formData.university || departments.length === 0}
             >
@@ -217,7 +226,7 @@ const RecommendationForm = ({ onSubmit }) => {
         <div className="pt-2">
           <button
             type="submit"
-            className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md 
+            className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md
               transition duration-300 ease-in-out text-sm font-medium
               ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={isLoading}
@@ -234,6 +243,17 @@ const RecommendationForm = ({ onSubmit }) => {
           </button>
         </div>
       </form>
+
+      {/* 🔴 新增：「我要评价」按钮（底部居中，绿色视觉突出） */}
+      <div className="mt-4 text-center">
+        <button
+          onClick={handleRateClick}
+          className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md
+            transition duration-300 ease-in-out text-sm font-medium"
+        >
+          我要评价
+        </button>
+      </div>
     </div>
   );
 };
