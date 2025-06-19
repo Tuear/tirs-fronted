@@ -14,20 +14,15 @@ const BASE_URL = config.API_BASE_URL;
  */
 export const getRecommendations = async (params) => {
   try {
-    // 发送POST请求到推荐接口
     const response = await axios.post(`${BASE_URL}/user/get_recommendations`, {
       query: params.query,
       university: params.university,
       department: params.department
     });
-    
-    // 返回推荐结果列表
-    return response.data.recommend_result || [];
+    // 🔴 修正：后端返回字段是 "commend_result"（c开头）
+    return response.data.commend_result || []; 
   } catch (error) {
-    // 异常处理：优先使用后端返回的错误信息
-    const errorMessage = error.response?.data?.error || 
-                        '获取推荐失败，请稍后重试';
-    
+    const errorMessage = error.response?.data?.error || '获取推荐失败，请稍后重试';
     throw { error: errorMessage };
   }
 };

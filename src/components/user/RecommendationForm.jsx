@@ -1,171 +1,168 @@
-// src/components/RecommendationForm.js
 import React, { useState, useEffect } from 'react';
-import { getRecommendations } from '../../api/getcommendApi'; // 导入API函数
+import { getRecommendations } from '../../api/getcommendApi'; 
 
 const RecommendationForm = ({ onSubmit }) => {
-  // 表单状态
   const [formData, setFormData] = useState({
     query: '',
-    university: '',
-    department: ''
+    university: '', // 存储学校 ID（如 "上海交通大学" 或 "qb"）
+    department: ''  // 存储学院 ID（如 "化学化工学院" 或 "qb"）
   });
-  
-  // 学校/院系选项（实际项目中应从后端获取）
-  const [universities, setUniversities] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  
-  // 加载状态
+  const [universities, setUniversities] = useState([]); // 学校选项：[{id, name}, ...]
+  const [departments, setDepartments] = useState([]);   // 学院选项：[{id, name}, ...]
   const [isLoading, setIsLoading] = useState(false);
-  
-  // 加载学校选项（模拟API请求）
+
+  // 🔴 第一步：加载学校列表（从 public 目录的 JSON 文件读取）
   useEffect(() => {
-    // 模拟从后端获取学校列表
     const fetchUniversities = async () => {
-      setTimeout(() => {
-        setUniversities([
-          { id: 'qb', name: '全部' },
-          { id: 'tsinghua', name: '清华大学' },
-          { id: 'pku', name: '北京大学' },
-          { id: 'zju', name: '浙江大学' },
-          { id: 'fudan', name: '复旦大学' },
-          { id: 'sjtu', name: '上海交通大学' }
-        ]);
-      }, 300);
+      try {
+        // 读取 public 下的 JSON 文件（React 中根路径即为 public）
+        const response = await fetch('/supported_universities.json');
+        const data = await response.json();
+        
+        // 构造学校选项：[ {id: 'qb', name: '全部'}, {id: '上海交通大学', name: '上海交通大学'}, ... ]
+        const universityOptions = [
+          { id: 'qb', name: '全部' }, // “全部”学校的 ID 约定为 "qb"
+          ...Object.keys(data).map(uniName => ({ 
+            id: uniName, 
+            name: uniName 
+          }))
+        ];
+        setUniversities(universityOptions);
+      } catch (error) {
+        console.error('加载学校列表失败:', error);
+        // 错误兜底：仅保留“全部”选项
+        setUniversities([{ id: 'qb', name: '全部' }]);
+      }
     };
-    
     fetchUniversities();
   }, []);
-  
-  // 当学校变化时加载院系列表
+
+  // 🔴 第二步：学校变化时，加载对应院系列表（含“全部”选项）
   useEffect(() => {
-    if (formData.university) {
-      // 模拟根据学校获取院系列表
+    if (formData.university) { // 学校已选择时才加载学院
       const fetchDepartments = async () => {
         setIsLoading(true);
-        setTimeout(() => {
-          // 根据选择的学校返回不同的院系
-          const deptsMap = {
-            tsinghua: [
-              { id: 'cs', name: '计算机科学与技术系' },
-              { id: 'ee', name: '电子工程系' },
-              { id: 'auto', name: '自动化系' },
-            ],
-            pku: [
-              { id: 'cs_pku', name: '信息科学技术学院' },
-              { id: 'math', name: '数学科学学院' },
-              { id: 'physics', name: '物理学院' },
-            ],
-            zju: [
-              { id: 'cs_zju', name: '计算机科学与技术学院' },
-              { id: 'med', name: '医学院' },
-              { id: 'materials', name: '材料科学与工程学院' },
-            ],
-            default: [
-              { id: 'cs', name: '计算机学院' },
-              { id: 'ee', name: '电子工程学院' },
-              { id: 'math', name: '数学学院' },
-            ],
-            qb: [
-              { id: 'qb', name: '全部' },
-            ],
-          };
-          
-          setDepartments(deptsMap[formData.university] || deptsMap.default);
+        try {
+          const response = await fetch('/supported_universities.json');
+          const data = await response.json();
+          let deptOptions = [];
+
+          // 处理「全部学校」的情况（学校 ID 为 "qb"）
+          if (formData.university === 'qb') {
+            deptOptions = [ { id: 'qb', name: '全部' } ]; // 学院也显示“全部”
+          } else {
+            // 读取 JSON 中对应学校的学院列表，添加“全部”选项
+            const targetDepts = data[formData.university] || []; // 如 data["上海交通大学"]
+            deptOptions = [
+              { id: 'qb', name: '全部' }, // “全部”学院的 ID 约定为 "qb"
+              ...targetDepts.map(deptName => ({ 
+                id: deptName, 
+                name: deptName 
+              }))
+            ];
+          }
+
+          setDepartments(deptOptions);
           setIsLoading(false);
-        }, 500);
+        } catch (error) {
+          console.error('加载院系列表失败:', error);
+          setDepartments([]);
+          setIsLoading(false);
+        }
       };
-      
       fetchDepartments();
     } else {
-      setDepartments([]);
+      setDepartments([]); // 学校未选择时，清空学院选项
     }
-  }, [formData.university]);
-  
-  // 处理输入变化
+  }, [formData.university]); // 学校变化时重新加载学院
+
+  // 输入变化处理（学校/学院/需求）
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  // 处理表单提交
+
+  // 🔴 第三步：表单提交，传递「全部」或具体名称到后端
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 验证输入
-    if (!formData.query) {
-      alert('请描述您的导师需求');
+    // 1. 需求描述非空验证（去空）
+    if (!formData.query.trim()) {
+      alert('请描述您的导师需求（不可为空或仅空格）');
       return;
     }
-    
-    if (!formData.university) {
-      alert('请选择学校');
+    // 2. 学校/学院非空验证（下拉框默认选项已控制，可选加强）
+    if (!formData.university || !formData.department) {
+      alert('请选择目标学校和学院');
       return;
     }
-    
+
     try {
       setIsLoading(true);
+      // 处理学校参数：“全部”或具体学校名称
+      const selectedUniversity = formData.university === 'qb' 
+        ? '全部' 
+        : universities.find(u => u.id === formData.university)?.name || formData.university;
       
-      // 获取选中的学校名称
-      const selectedUniversity = universities.find(u => u.id === formData.university)?.name || formData.university;
+      // 处理学院参数：“全部”或具体学院名称
+      const selectedDepartment = formData.department === 'qb' 
+        ? '全部' 
+        : departments.find(d => d.id === formData.department)?.name || formData.department;
       
-      // 调用API获取推荐
+      // 调用 API 传递参数
       const recommendations = await getRecommendations({
         query: formData.query,
         university: selectedUniversity,
-        department: formData.department
+        department: selectedDepartment
       });
-      
-      // 将结果传递给父组件
-      onSubmit(recommendations);
+      onSubmit(Array.isArray(recommendations) ? recommendations : []);
     } catch (error) {
       console.error('推荐失败:', error);
       alert(error.error || '获取推荐失败，请重试');
+      onSubmit([]);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
-    <div className="max-w-2xl w-full bg-white shadow-md rounded-lg p-5 space-y-4">
-      {/* 标题+引导文案 */}
+    <div className="max-w-2xl w-full bg-white/70 backdrop-blur-sm shadow-md rounded-xl p-5 space-y-4">
       <div className="text-center">
-        <h1 className="text-lg font-semibold text-gray-800">智能导师推荐</h1>
-        <p className="mt-2 text-xs text-gray-500">
+        <h1 className="text-xl font-semibold text-gray-900">智能导师推荐</h1>
+        <p className="mt-2 text-sm text-gray-700">
           请描述您期望的导师类型，并选择学校/学院范围<br />
           系统将为您智能匹配理想导师
         </p>
       </div>
-      
-      {/* 表单 */}
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 自然语言输入框 */}
+        {/* 需求输入框 */}
         <div>
           <label 
             htmlFor="query" 
-            className="block text-xs font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
             描述导师需求
           </label>
-          <input
-            type="text"
+          <textarea
             id="query"
             name="query"
             value={formData.query}
             onChange={handleInputChange}
             placeholder="例如：研究人工智能的年轻导师，有海外经历"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
-              focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs"
+            className="w-full min-h-[120px] px-4 py-3 border border-blue-200 rounded-md shadow-sm 
+              focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm 
+              bg-white/90 resize-none"
             disabled={isLoading}
           />
         </div>
-        
-        {/* 学校+学院 下拉选择区 */}
+
+        {/* 学校+学院选择区 */}
         <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
           {/* 学校选择器 */}
           <div className="w-full sm:w-1/2">
             <label 
               htmlFor="university" 
-              className="block text-xs font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               选择目标学校
             </label>
@@ -174,8 +171,9 @@ const RecommendationForm = ({ onSubmit }) => {
               name="university"
               value={formData.university}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
-                focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs"
+              className="w-full px-3 py-2 border border-blue-200 rounded-md shadow-sm 
+                focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm 
+                bg-white/90"
               disabled={isLoading || universities.length === 0}
             >
               <option value="">请选择学校</option>
@@ -186,12 +184,12 @@ const RecommendationForm = ({ onSubmit }) => {
               ))}
             </select>
           </div>
-          
+
           {/* 学院选择器 */}
           <div className="w-full sm:w-1/2">
             <label 
               htmlFor="department" 
-              className="block text-xs font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               选择目标学院
             </label>
@@ -200,8 +198,9 @@ const RecommendationForm = ({ onSubmit }) => {
               name="department"
               value={formData.department}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
-                focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs"
+              className="w-full px-3 py-2 border border-blue-200 rounded-md shadow-sm 
+                focus:outline-none focus:ring-blue-400 focus:border-blue-400 text-sm 
+                bg-white/90"
               disabled={isLoading || !formData.university || departments.length === 0}
             >
               <option value="">请选择学院</option>
@@ -213,13 +212,13 @@ const RecommendationForm = ({ onSubmit }) => {
             </select>
           </div>
         </div>
-        
-        {/* 开始推荐按钮 */}
+
+        {/* 提交按钮（加载态带 Spinner） */}
         <div className="pt-2">
           <button
             type="submit"
-            className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md 
-              transition duration-300 ease-in-out text-xs font-medium
+            className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md 
+              transition duration-300 ease-in-out text-sm font-medium
               ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={isLoading}
           >
