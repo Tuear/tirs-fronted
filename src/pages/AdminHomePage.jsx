@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import Layout from '../components/layout/Layout';
 import ProfessorInfoForm from '../components/admin/ProfessorInfoForm'; // 导入表单组件
+import PlatformMonitor from '../components/admin/PlatformMonitor'; // 🔴 导入平台监控组件
+import UserManagement from '../components/admin/UserManagement'; // 🔴 导入用户管理组件
+import EvaluationManagement from '../components/admin/EvaluationManagement'; // 🔴 导入评价管理组件
 
 const AdminHomePage = () => {
   // 状态：标记当前激活的功能面板（null表示默认占位）
@@ -47,11 +50,17 @@ const AdminHomePage = () => {
           </button>
         </aside>
 
-        {/* 右侧内容区：根据currentPanel渲染对应组件 */}
+         {/* 右侧内容区：根据 currentPanel 渲染组件 */}
         <main className="flex-1 p-8">
           <div className="bg-white border border-gray-200 rounded-lg shadow-md p-6 h-full">
-            {currentPanel === 'professor' ? (
+            {currentPanel === 'professor' ? ( // 🔴 导师信息维护的条件渲染
               <ProfessorInfoForm />
+            ) : currentPanel === 'monitor' ? ( // 🔴 平台监控的条件渲染
+              <PlatformMonitor />
+            ) : currentPanel === 'user' ? ( // 🔴 用户管理的条件渲染
+              <UserManagement />
+            ) : currentPanel === 'evaluation' ? ( // 🔴 评价管理的条件渲染
+              <EvaluationManagement />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">
