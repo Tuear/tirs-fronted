@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getallreview } from '../../api/getallreviewApi'; // 替换为实际接口文件路径
+import { getallreview } from '../../api/reviewmanageApi'; // 替换为实际接口文件路径
 
 const AdminPage = () => {
   const [reviews, setReviews] = useState([]); // 存储评价列表
@@ -8,9 +8,10 @@ const AdminPage = () => {
   // 点击“评价管理”时执行的逻辑
   const handleEvaluationManage = async () => {
     try {
-      const result = await getallreview(); // 调用新增的接口
-      setReviews(result.data); // 存储评价列表到状态
-      setError('');            // 清空错误信息
+      const result = await getallreview(); 
+      // 确保接口返回数据中包含 `user_id` 字段（需后端配合）
+      setReviews(result.data); 
+      setError('');            
     } catch (err) {
       setError(err.error);    // 捕获并显示接口错误
       setReviews([]);         // 清空列表（可选，根据需求设计）
@@ -34,6 +35,8 @@ const AdminPage = () => {
             {reviews.map((review) => (
               <div key={review.评价ID} className="review-item">
                 <p>评价ID：{review.评价ID}</p>
+                {/* 新增：展示用户ID */}
+                <p>用户ID：{review.user_id}</p>  
                 <p>导师姓名：{review.导师姓名}</p>
                 <p>学校：{review.学校}</p>
                 <p>学院/系：{review.学院/系}</p>
